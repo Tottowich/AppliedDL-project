@@ -3,22 +3,22 @@ import numpy as np
 from IPython.display import clear_output
 from keras.callbacks import Callback, EarlyStopping, ReduceLROnPlateau
 
-from data.data_generator import DataGenerator
+from data.data_generator import DataLoader
 from utils.visualizations import plot_sample
 
 
 class PlotSampleCallback(Callback):
     """Callback that plots and saves sample predictions during training.
     """
-    def __init__(self, gen_data:DataGenerator, save_path:str, threshold:float=0.5, title:str="Samples", **kwargs):
+    def __init__(self, gen_data:DataLoader, save_path:str, threshold:float=0.5, title:str="Samples", **kwargs):
         super().__init__(**kwargs)
         self.gen_data = gen_data
-        self.array_labels = gen_data.array_labels
+        self.arrays = gen_data.arrays
         self.save_path = save_path
         self.threshold = threshold
         self.title = title
     def _plot(self, title, name):
-        plot_sample(self.gen_data, self.array_labels, model=self.model, threshold=self.threshold, save=True, title=title, save_path=self.save_path, figure_name=name)
+        plot_sample(self.gen_data, self.arrays, model=self.model, threshold=self.threshold, save=True, title=title, save_path=self.save_path, figure_name=name)
         
     def on_epoch_end(self, epoch, logs=None):
         title = f"{self.title}: epoch {epoch}"

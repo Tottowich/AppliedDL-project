@@ -79,7 +79,7 @@ class DecoderBlockConcat(DecoderBlock):
                 drop_rate:float=0.0,
                 layer_norm:bool=True,
                 in_channels:int=None, **kwargs):
-        super(DecoderBlockConcat, self).__init__(name=f"decoder_block_concat_{DecoderBlock.depth_id}",drop_rate=drop_rate,layer_norm=layer_norm **kwargs)
+        super(DecoderBlockConcat, self).__init__(name=f"decoder_block_concat_{DecoderBlock.depth_id}",drop_rate=drop_rate,layer_norm=layer_norm, **kwargs)
         self.concat = Concatenate()
         self.convT = Conv2DTranspose(filters=filters, kernel_size=3, strides=2, padding='same', activation=activation)
     def _call(self, x,skip, **kwargs):
@@ -288,6 +288,8 @@ class DecoderBuilder:
                         in_channels=self.in_channels[i],
                         upsample_type=self.upsample_type,)
             if self.upsample_type == "transposed":
+                # Remove upsample_type from dict
+                kwargs.pop("upsample_type")
                 if self.decoder_type == "concat":
                     layers.append(DecoderBlockConcat(**kwargs))
                 elif self.decoder_type == "add":

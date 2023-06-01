@@ -6,12 +6,12 @@ import numpy as np
 from keras.models import Model
 from mpl_toolkits.axes_grid1 import ImageGrid
 
-from data.data_generator import DataGenerator
+from data.data_generator import DataLoader
 from data.pre_processor import pre_prosses
 from utils.helper import prediction_threshold
 
-def plot_sample(gen_data: DataGenerator,
-                array_labels:List[str],
+def plot_sample(gen_data: DataLoader,
+                arrays:List[str],
                 model:Model=None,
                 batch_idx:int=None,
                 threshold:float=0.5,
@@ -25,7 +25,7 @@ def plot_sample(gen_data: DataGenerator,
     x, y = pre_prosses(data)
     # Preprocess the data.
     # Grid with one of each array_label.
-    n_formats = len(array_labels)-1
+    n_formats = len(arrays)-1
     rows = 2 if not model else 3
     cols = n_formats
     preds = model.predict(x, verbose=0) if model else None
@@ -37,7 +37,7 @@ def plot_sample(gen_data: DataGenerator,
                     nrows_ncols=(rows, cols), 
                     axes_pad=[0.0, 0.35],
                     )
-    first_format = array_labels[0]
+    first_format = arrays[0]
     for i, ax in enumerate(grid):
         # Get the row and column index.
         # Create masked images.
@@ -49,12 +49,12 @@ def plot_sample(gen_data: DataGenerator,
         if row == 0:
             # ax.imshow(x[i+col*n_formats], cmap='gray')
             ax.imshow(x[col,...,col], cmap='gray', vmin=0, vmax=1)
-            ax.set_title(f"{array_labels[col]}", fontsize=20)
+            ax.set_title(f"{arrays[col]}", fontsize=20)
         elif row == 1:
             # Overlay the target on the input image.
             ax.imshow(x[col,...,col], cmap='gray', vmin=0, vmax=1)
             ax.imshow(alphas_label, cmap='Reds', vmin=0, vmax=1, alpha=alphas_label)
-            ax.set_title(f"{array_labels[-1]}", fontsize=20)
+            ax.set_title(f"{arrays[-1]}", fontsize=20)
         else:
             alphas = np.ma.masked_array(preds[col], mask=preds[col]>=0)
             # To binary mask
