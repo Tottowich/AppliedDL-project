@@ -308,7 +308,7 @@ class DecoderBuilder:
                 else:
                     raise ValueError(f"Decoder type \{self.decoder_type}\ not supported.")
             else:
-                raise ValueError(f"Upsample type \{self.upsample_type}\ not supported.")
+                raise ValueError(f"Upsample type \'{self.upsample_type}\' not supported.")
 
             if self.depth[i]>0:
                 layers.append(

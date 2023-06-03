@@ -43,8 +43,6 @@ def build_unet(
     )
     x = Input(shape=input_shape)
     encoder_outputs = encoder(x)
-    # for enc in encoder_outputs:
-    #     print(enc.shape)
     decoder = build_decoder(
         encoder_outputs=encoder_outputs,
         num_classes=num_classes,
