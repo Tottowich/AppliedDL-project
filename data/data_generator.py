@@ -9,11 +9,17 @@ from typing import List, Tuple, Dict, Union, Optional
 from .augmentor import Augmentor
 
 class DataLoader(Sequence):
-    def __init__(self, data_path, arrays, batch_size=32, shuffle=True):
+    def __init__(self,
+                 data_path,
+                 arrays,
+                 batch_size=32,
+                 shuffle=True,
+                 zoom_factor=0.25):
         self.data_path = data_path
         self.arrays = arrays
         self.batch_size = batch_size
         self.shuffle = shuffle
+        self.zoom_factor = zoom_factor
 
         if self.data_path is None:
             raise ValueError('The data path is not defined.')
@@ -30,7 +36,7 @@ class DataLoader(Sequence):
             self.n_channels = 1
             for i in range(len(self.arrays)):
                 im = npzfile[self.arrays[i]]
-                im = zoom(im, 0.25)
+                im = zoom(im, self.zoom_factor)
                 self.in_dims.append((self.batch_size,
                                     *np.shape(im),
                                     self.n_channels))
@@ -62,7 +68,7 @@ class DataLoader(Sequence):
                 x = npzfile[array].astype(np.float32)
                 if np.max(x) > 0:
                     x /= np.max(x)
-                x = zoom(x, 0.25)
+                x = zoom(x, self.zoom_factor)
                 x = np.expand_dims(x, axis=2)
                 input_images.append(x)
 
@@ -70,7 +76,7 @@ class DataLoader(Sequence):
             input_data = stacked_input
 
             mask_raw = npzfile['mask'].astype(np.float32)
-            mask_preprocessed = zoom(mask_raw, 0.25)
+            mask_preprocessed = zoom(mask_raw, self.zoom_factor)
             mask_preprocessed = (mask_preprocessed > 0.5).astype(np.float32)
             mask_preprocessed = np.expand_dims(mask_preprocessed, axis=2)
             mask_data = mask_preprocessed
@@ -110,15 +116,16 @@ def loaders(gen_dir:str,
             batch_size: int,
             augment:Union[bool,Augmentor] = True,
             array_labels: List[str] = ['t1', 't1ce', 't2', 'flair', 'mask'],
-            fraction:float = 1.0):
+            fraction:float = 1.0,
+            zoom_factor:float = 0.25):
     if isinstance(augment, bool):
         augmentor = Augmentor(translate=0, # No translation. Due to lack of speed.
                             shear=0, # No shear. Due to lack of speed.
                             rotate=0, # No rotation. Due to lack of speed.
-                            mask=0.8, # Probability of masking the image.
+                            mask=0.4, # Probability of masking the image.
                             mask_size=0.2, # Maximum size of the mask as a fraction of the image size.
                             max_n_masks=6, # Maximum number of masks to apply.
-                            noise=0.4, # Probability of adding Gaussian noise to the image.
+                            noise=0.2, # Probability of adding Gaussian noise to the image.
                             noise_mean=0.05, # Mean of the noise.
                             noise_std=0.1, # Standard deviation of the noise.
                             ) if augment else None# Augmentation of the data.
@@ -127,11 +134,14 @@ def loaders(gen_dir:str,
     gen_train = DataGeneratorAugmented(data_path=gen_dir + 'training',
                             arrays=array_labels,
                             batch_size=batch_size,
-                            augmentor=augmentor)
+                            augmentor=augmentor,
+                            zoom_factor=zoom_factor)
     gen_val = DataGeneratorAugmented(data_path=gen_dir + 'validating',
                             arrays=array_labels,
-                            batch_size=batch_size)
+                            batch_size=batch_size,
+                            zoom_factor=zoom_factor)
     gen_test = DataGeneratorAugmented(data_path=gen_dir + 'testing',
                             arrays=array_labels,
-                            batch_size=batch_size)
+                            batch_size=batch_size,
+                            zoom_factor=zoom_factor)
     return gen_train, gen_val, gen_test, augmentor

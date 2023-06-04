@@ -77,3 +77,52 @@ def plot_sample(gen_data: DataLoader,
         plt.close(fig)
     else:
         plt.show()
+from uncertainty.monte_carlo_dropout import MonteCarloDropoutModel
+def plot_predictions(gen,n:int=10, model=None, unc_model:MonteCarloDropoutModel=None, title:str=None):
+    if not isinstance(gen, tuple):
+        data_inputs, data_masks = next(iter(gen))
+    else:
+        data_inputs, data_masks = gen
+    indexes = np.random.randint(0, len(data_inputs), n)
+    rows = np.sqrt(n).astype(int)
+    cols = np.ceil(n/rows).astype(int)
+    fig = plt.figure(figsize=(20, 20), dpi=100)
+    per_input = (1 + (model is not None) + (unc_model is not None))
+    cols = per_input if per_input > 1 else cols
+    grid = ImageGrid(fig, 111, nrows_ncols=(rows*per_input, cols), axes_pad=0.0)
+    first_row = True
+    for i, idx in zip(range(0,len(grid),per_input), indexes):
+        x = data_inputs[idx, :, :]
+        y = data_masks[idx, :, :]
+        alphas_label = np.ma.masked_array(y, mask=y>=0)
+        alphas_label = np.where(alphas_label, 0.8, 0).astype(np.float32).squeeze()
+        grid[i].imshow(x[...,-2], cmap='gray', vmin=0, vmax=1)
+        grid[i].imshow(alphas_label, cmap='Reds', vmin=0, vmax=1, alpha=alphas_label)
+        grid[i].axis('off')
+        if model: # Plot predictions
+            i = i+1
+            y_pred = prediction_threshold(model.predict(x[np.newaxis, ...], verbose=0)[0], threshold=0.6)
+            alphas_pred = np.ma.masked_array(y_pred, mask=y>=0)
+            alphas_pred = np.where(alphas_pred, 0.8, 0).astype(np.float32).squeeze()
+            grid[i].imshow(x[...,-2], cmap='gray', vmin=0, vmax=1)
+            grid[i].imshow(alphas_pred, cmap='Blues', vmin=0, vmax=1, alpha=alphas_pred)
+            grid[i].axis('off')
+        if unc_model: # Plot uncertainty
+            i = i+1
+            unc = unc_model.predict(x[np.newaxis, ...],n_iter=25)[0]
+            alphas_unc = np.array(unc).squeeze()/np.max(unc)# np.ma.masked_array(unc, mask=unc>=1e-2)
+            grid[i].imshow(x[...,-2], cmap='gray', vmin=0, vmax=1)
+            grid[i].imshow(alphas_unc, cmap='Greens', vmin=0, vmax=1, alpha=alphas_unc)
+            grid[i].axis('off')
+    if model or unc_model:
+        # Increase spacing between grid elements
+        if first_row:
+            grid[0].set_title('Input', fontsize=20)
+            if model:
+                grid[1].set_title('Prediction', fontsize=20)
+            if unc_model:
+                grid[2].set_title('Uncertainty', fontsize=20)
+            first_row = False
+    # if title:
+    #     fig.suptitle(title, fontsize=20)
+    plt.show()   

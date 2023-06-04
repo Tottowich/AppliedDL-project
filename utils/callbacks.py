@@ -44,13 +44,13 @@ class PlotMetricsCallback(Callback):
         super().__init__(**kwargs)
         self.epochs = epochs
         self.n_batches = n_batches
-        self.dice_training = []
+        self.dice_training = np.empty(self.n_batches*self.epochs)
         self.dice_validation = []
         self.unc_validation = []
         self.dice_avg_traning = []
     def on_batch_end(self, batch, logs=None):
         out = super().on_batch_end(batch, logs)
-        self.dice_training.append(logs.get('dice_coef'))
+        self.dice_training = np.append(self.dice_training, logs.get('dice_coef'))
         return out
     def on_epoch_end(self, epoch, logs=None):
         out = super().on_epoch_end(epoch, logs)
@@ -61,7 +61,7 @@ class PlotMetricsCallback(Callback):
         fig, axs = plt.subplots(1, 2, figsize=(16,8))
         axs[0].plot(np.linspace(0, epoch, epoch + 1), self.dice_validation, label="val_dice")
         axs[0].plot(np.linspace(0, epoch, epoch + 1), self.dice_avg_traning, label="train_dice", color='C1')
-        axs[0].plot(np.linspace(0, epoch, self.n_batches*(epoch+1)), self.dice_training, label="train_dice_batch", alpha=0.3, color='C1')
+        axs[0].plot(np.linspace(0, epoch, self.n_batches*(epoch+1)), self.dice_training[:self.n_batches*(epoch+1)], label="train_dice_batch", alpha=0.3, color='C1')
         axs[0].legend()
         axs[1].plot(np.linspace(0, epoch, epoch + 1), self.unc_validation, label="val_unc")
         axs[0].set_title("Dice score")
@@ -70,6 +70,8 @@ class PlotMetricsCallback(Callback):
         axs[1].set_title("MC Uncertainty")
         axs[1].grid(True)
         axs[1].set_xlabel('Epoch')
+        axs[0].set_ylim([0,1])
+        axs[1].set_ylim([0,1])
         plt.show()
         return out
             

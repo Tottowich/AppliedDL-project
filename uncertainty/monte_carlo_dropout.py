@@ -5,7 +5,7 @@ from typing import List, Tuple, Dict, Union, Optional
 
 class MonteCarloDropoutModel(object):
     def __init__(self, model):
-        self.f = Model(model.inputs, model.layers[-1].output)
+        self.f = Model(model.inputs, model.output)
 
     def predict(self, x, n_iter=5):
         result = []
