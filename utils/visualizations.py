@@ -78,7 +78,7 @@ def plot_sample(gen_data: DataLoader,
     else:
         plt.show()
 from uncertainty.monte_carlo_dropout import MonteCarloDropoutModel
-def plot_predictions(gen,n:int=10, model=None, unc_model:MonteCarloDropoutModel=None, title:str=None):
+def plot_predictions(gen,n:int=10, model=None, unc_model:MonteCarloDropoutModel=None, title:str=None,show_labels:bool=True):
     if not isinstance(gen, tuple):
         data_inputs, data_masks = next(iter(gen))
     else:
@@ -97,7 +97,8 @@ def plot_predictions(gen,n:int=10, model=None, unc_model:MonteCarloDropoutModel=
         alphas_label = np.ma.masked_array(y, mask=y>=0)
         alphas_label = np.where(alphas_label, 0.8, 0).astype(np.float32).squeeze()
         grid[i].imshow(x[...,-2], cmap='gray', vmin=0, vmax=1)
-        grid[i].imshow(alphas_label, cmap='Reds', vmin=0, vmax=1, alpha=alphas_label)
+        if show_labels:
+            grid[i].imshow(alphas_label, cmap='Reds', vmin=0, vmax=1, alpha=alphas_label)
         grid[i].axis('off')
         if model: # Plot predictions
             i = i+1
@@ -117,7 +118,7 @@ def plot_predictions(gen,n:int=10, model=None, unc_model:MonteCarloDropoutModel=
     if model or unc_model:
         # Increase spacing between grid elements
         if first_row:
-            grid[0].set_title('Input', fontsize=20)
+            grid[0].set_title('Input'+f"{' w/ Labels' if show_labels else ''}", fontsize=20)
             if model:
                 grid[1].set_title('Prediction', fontsize=20)
             if unc_model:
